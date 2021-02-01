@@ -1,44 +1,58 @@
+import { createCube } from "../components/cube";
+
 const { Raycaster, Vector2 } = require("three");
 
 // used for init
 let raycaster = null;
 let mouse = null;
 let camera = null;
+let scene = null;
 let intersectableObjects = [];
 
-// raycasting
+// raycasting for lightnening 
 let lastIntersected;
 
-function createRaycaster(cam, intersectable = []) {
-    camera = cam;
-    raycaster = new Raycaster();
-    mouse = new Vector2();
-    intersectableObjects = intersectable;
+function createRaycaster(cam, globalScene, intersectable = []) {
+  camera = cam;
+  raycaster = new Raycaster();
+  mouse = new Vector2();
+  scene = globalScene;
+  intersectableObjects = intersectable;
 
-    return raycaster;
+  return raycaster;
 }
 
 const makeLighter = (intersects) => {
-    if (intersects && intersects.length) {
-        const intersectedNearest = intersects[0].object;
-        if (intersectedNearest !== lastIntersected) {
-            if (lastIntersected) {
-                lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
-            }
+  if (intersects && intersects.length) {
+    const intersectedNearest = intersects[0].object;
+    if (intersectedNearest !== lastIntersected) {
+      if (lastIntersected) {
+        lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
+      }
 
-            lastIntersected = intersectedNearest;
-            lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
-            intersectedNearest.material.emissive.setHex(0x00ff00);
-        }
-    } else {
-        if (lastIntersected) {
-            lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
-        }
-        lastIntersected = null;
+      lastIntersected = intersectedNearest;
+      lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
+      intersectedNearest.material.emissive.setHex(0xffb3b3);
     }
+  } else {
+    if (lastIntersected) {
+      lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
+    }
+    lastIntersected = null;
+  }
+};
+
+const addCube = (planeIntersection) => {
+    const cube = createCube();
+    cube.position.copy(planeIntersection.point);
+    // cube.setRotationFromMatrix(planeIntersection.object.matrixWorld);
+    cube.position.divideScalar(10).floor().multiplyScalar(10).addScalar(5);
+    cube.position.y += cube.position.y < 0 ? -2 : 2;
+    scene.add(cube);
+    intersectableObjects.push(cube);
 }
 
-function onMouseMove(event) {
+const initEvent = (event) => {
   event.preventDefault();
 
   if (mouse && raycaster) {
@@ -46,11 +60,31 @@ function onMouseMove(event) {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
 
+    return true;
+  }
+
+  return false;
+};
+
+function onMouseMove(event) {
+  if (initEvent(event)) {
     const intersects = raycaster.intersectObjects(intersectableObjects);
     makeLighter(intersects);
   }
 }
 
-window.addEventListener('mousemove', onMouseMove, false);
+function onMouseDown(event) {
+    if (initEvent(event)) {
+        const intersects = raycaster.intersectObjects(intersectableObjects);
+        if (intersects && intersects.length > 0) {
+            if (intersects[0].object.name === 'Plane') {
+                addCube(intersects[0]);
+            }
+        }
+    }
+}
+
+document.addEventListener("mousemove", onMouseMove, false);
+document.addEventListener("click", onMouseDown, false);
 
 export { createRaycaster, raycaster, mouse };

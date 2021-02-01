@@ -2,7 +2,7 @@ import { createCamera } from "./components/camera.js";
 import { createLights } from "./components/lights.js";
 import { createScene } from "./components/scene.js";
 import { createPlane } from "./components/plane.js";
-
+import { createHelpers } from "./components/helpers.js";
 
 import { createControls } from "./systems/controls.js";
 import { createRenderer } from "./systems/renderer.js";
@@ -32,10 +32,12 @@ class World {
     new Resizer(container, camera, renderer);
 
     const plane = createPlane();
-    const raycaster = createRaycaster(camera, [plane]);
+    const raycaster = createRaycaster(camera, scene, [plane]);
+    const { axesHelper } = createHelpers();
 
     scene.add(directionalLight, ambientLight);
     scene.add(plane);
+    scene.add(axesHelper);
   }
 
   render() {
