@@ -1,9 +1,9 @@
 import { BoxBufferGeometry, Color, Mesh, MeshStandardMaterial } from 'three';
 
 function createCube() {
-  const geometry = new BoxBufferGeometry(3, 3, 3);
+  const geometry = new BoxBufferGeometry(1, 1, 1);
   const material = new MeshStandardMaterial({
-    color: new Color('red'),
+    color: new Color('white'),
   });
   const cube = new Mesh(geometry, material);
   cube.name = 'Central cube';
