@@ -1,5 +1,5 @@
 import { createCube } from "../components/cube";
-
+import { setActionHelperText } from "../elements/action-helper";
 const { Raycaster, Vector2 } = require("three");
 
 // used for init
@@ -8,6 +8,7 @@ let mouse = null;
 let camera = null;
 let scene = null;
 let intersectableObjects = [];
+let lastAddedCubeNumber = 1;
 
 // raycasting for lightnening
 let lastIntersected;
@@ -24,23 +25,21 @@ function createRaycaster(cam, globalScene, intersectable = []) {
 
 const getIntersectableObjects = () => intersectableObjects;
 const getMouse = () => mouse;
-const getRaycaster = () => raycaster; 
+const getRaycaster = () => raycaster;
 
 export { createRaycaster, getRaycaster, getMouse, getIntersectableObjects };
 
 const makeLighter = (intersects) => {
-  if (intersects && intersects.length) {
+  if (intersects && intersects.length && intersects[0].object.name !== "Plane") {
     const intersectedNearest = intersects[0].object;
-    if (intersectedNearest.name !== "Plane") {
-      if (intersectedNearest !== lastIntersected) {
-        if (lastIntersected) {
-          lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
-        }
-
-        lastIntersected = intersectedNearest;
-        lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
-        intersectedNearest.material.emissive.setHex(0xffb3b3);
+    if (intersectedNearest !== lastIntersected) {
+      if (lastIntersected) {
+        lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
       }
+
+      lastIntersected = intersectedNearest;
+      lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
+      intersectedNearest.material.emissive.setHex(0xffb3b3);
     }
   } else {
     if (lastIntersected) {
@@ -51,11 +50,12 @@ const makeLighter = (intersects) => {
 };
 
 const addCube = (planeIntersection) => {
-  const cube = createCube(`Cube ${intersectableObjects.length}`);
+  const cube = createCube(`Cube ${lastAddedCubeNumber}`);
   cube.position.copy(planeIntersection.point);
   cube.position.divideScalar(10).floor().multiplyScalar(10).addScalar(5);
   cube.position.y += cube.position.y < 0 ? -2 : 2;
   scene.add(cube);
+  lastAddedCubeNumber++;
   intersectableObjects.push(cube);
 };
 
@@ -80,9 +80,29 @@ const initEvent = (event) => {
   return false;
 };
 
+const handleHelperText = (intersects) => {
+  if (!intersects.length) {
+    setActionHelperText("Click onto the plane to place a cube there");
+    return;
+  }
+
+  const intersectedObject = intersects[0].object;
+
+  if (intersectedObject.name === "Plane") {
+    setActionHelperText(`Add Cube ${lastAddedCubeNumber}`);
+    return;
+  }
+
+  if (intersectedObject.name.startsWith("Cube")) {
+    setActionHelperText(`Remove ${intersectedObject.name}`);
+    return;
+  }
+};
+
 function onMouseMove(event) {
   if (initEvent(event)) {
     const intersects = raycaster.intersectObjects(intersectableObjects);
+    handleHelperText(intersects);
     makeLighter(intersects);
   }
 }
