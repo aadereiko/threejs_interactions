@@ -9,7 +9,7 @@ let camera = null;
 let scene = null;
 let intersectableObjects = [];
 
-// raycasting for lightnening 
+// raycasting for lightnening
 let lastIntersected;
 
 function createRaycaster(cam, globalScene, intersectable = []) {
@@ -22,17 +22,25 @@ function createRaycaster(cam, globalScene, intersectable = []) {
   return raycaster;
 }
 
+const getIntersectableObjects = () => intersectableObjects;
+const getMouse = () => mouse;
+const getRaycaster = () => raycaster; 
+
+export { createRaycaster, getRaycaster, getMouse, getIntersectableObjects };
+
 const makeLighter = (intersects) => {
   if (intersects && intersects.length) {
     const intersectedNearest = intersects[0].object;
-    if (intersectedNearest !== lastIntersected) {
-      if (lastIntersected) {
-        lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
-      }
+    if (intersectedNearest.name !== "Plane") {
+      if (intersectedNearest !== lastIntersected) {
+        if (lastIntersected) {
+          lastIntersected.material.emissive.setHex(lastIntersected.currentHex);
+        }
 
-      lastIntersected = intersectedNearest;
-      lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
-      intersectedNearest.material.emissive.setHex(0xffb3b3);
+        lastIntersected = intersectedNearest;
+        lastIntersected.currentHex = lastIntersected.material.emissive.getHex();
+        intersectedNearest.material.emissive.setHex(0xffb3b3);
+      }
     }
   } else {
     if (lastIntersected) {
@@ -43,14 +51,20 @@ const makeLighter = (intersects) => {
 };
 
 const addCube = (planeIntersection) => {
-    const cube = createCube();
-    cube.position.copy(planeIntersection.point);
-    // cube.setRotationFromMatrix(planeIntersection.object.matrixWorld);
-    cube.position.divideScalar(10).floor().multiplyScalar(10).addScalar(5);
-    cube.position.y += cube.position.y < 0 ? -2 : 2;
-    scene.add(cube);
-    intersectableObjects.push(cube);
-}
+  const cube = createCube(`Cube ${intersectableObjects.length}`);
+  cube.position.copy(planeIntersection.point);
+  cube.position.divideScalar(10).floor().multiplyScalar(10).addScalar(5);
+  cube.position.y += cube.position.y < 0 ? -2 : 2;
+  scene.add(cube);
+  intersectableObjects.push(cube);
+};
+
+const removeCube = (cube) => {
+  intersectableObjects = intersectableObjects.filter(
+    (item) => item.name !== cube.name
+  );
+  scene.remove(cube);
+};
 
 const initEvent = (event) => {
   event.preventDefault();
@@ -74,17 +88,17 @@ function onMouseMove(event) {
 }
 
 function onMouseDown(event) {
-    if (initEvent(event)) {
-        const intersects = raycaster.intersectObjects(intersectableObjects);
-        if (intersects && intersects.length > 0) {
-            if (intersects[0].object.name === 'Plane') {
-                addCube(intersects[0]);
-            }
-        }
+  if (initEvent(event)) {
+    const intersects = raycaster.intersectObjects(intersectableObjects);
+    if (intersects && intersects.length > 0) {
+      if (intersects[0].object.name === "Plane") {
+        addCube(intersects[0]);
+      } else {
+        removeCube(intersects[0].object);
+      }
     }
+  }
 }
 
 document.addEventListener("mousemove", onMouseMove, false);
 document.addEventListener("click", onMouseDown, false);
-
-export { createRaycaster, raycaster, mouse };
