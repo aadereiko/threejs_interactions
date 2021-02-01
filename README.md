@@ -1,1 +1,1 @@
-# threejs_interactions
+# A Three.js interaction task
