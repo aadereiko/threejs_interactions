@@ -162,5 +162,6 @@ function onMouseDown(event) {
 function onMouseUp(event) {
   if (initEvent(event)) {
     isMouseDown = false;
+    dragObject = null;
   }
 }
