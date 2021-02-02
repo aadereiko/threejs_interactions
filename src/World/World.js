@@ -34,7 +34,7 @@ class World {
     new Resizer(container, camera, renderer);
 
     const plane = createPlane();
-    const { raycaster, plane: tempPlane, tempPoint } = createRaycaster(
+    const { raycaster } = createRaycaster(
       camera,
       scene,
       [plane],
@@ -46,7 +46,6 @@ class World {
 
     scene.add(directionalLight, ambientLight);
     scene.add(plane);
-    scene.add(tempPlane, tempPoint);
     scene.add(axesHelper);
   }
 
