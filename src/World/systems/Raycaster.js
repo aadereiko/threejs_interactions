@@ -1,6 +1,16 @@
 import { createCube } from "../components/cube";
 import { setActionHelperText } from "../elements/action-helper";
-const { Raycaster, Vector2 } = require("three");
+const {
+  Raycaster,
+  Vector2,
+  Vector3,
+  Mesh,
+  PlaneBufferGeometry,
+  MeshBasicMaterial,
+  Points,
+  PointsMaterial,
+  Geometry,
+} = require("three");
 
 // used for init
 let raycaster = null;
@@ -9,18 +19,37 @@ let camera = null;
 let scene = null;
 let intersectableObjects = [];
 let lastAddedCubeNumber = 1;
+let canvas = null;
 
 // raycasting for lightnening
 let lastIntersected;
 
-function createRaycaster(cam, globalScene, intersectable = []) {
+// drag
+let isMouseDown = false;
+// offset is used for smooth moving independing on the point of object we've clicked
+let offset = new Vector3();
+
+const plane = new Mesh(
+  new PlaneBufferGeometry(500, 500, 8, 8),
+  new MeshBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true })
+);
+
+const tempPoint = new Points(new Geometry().setFromPoints([new Vector3()]), new PointsMaterial({ color: "blue " }));
+
+plane.visible = false;
+
+function createRaycaster(cam, globalScene, intersectable = [], canvasElement) {
   camera = cam;
   raycaster = new Raycaster();
   mouse = new Vector2();
   scene = globalScene;
   intersectableObjects = intersectable;
+  canvas = canvasElement;
 
-  return raycaster;
+  canvas.addEventListener("mousedown", onMouseDown, false);
+  canvas.addEventListener("mousemove", onMouseMove, false);
+  canvas.addEventListener("mouseup", onMouseUp, false);
+  return { raycaster, plane, tempPoint };
 }
 
 const getIntersectableObjects = () => intersectableObjects;
@@ -30,7 +59,11 @@ const getRaycaster = () => raycaster;
 export { createRaycaster, getRaycaster, getMouse, getIntersectableObjects };
 
 const makeLighter = (intersects) => {
-  if (intersects && intersects.length && intersects[0].object.name !== "Plane") {
+  if (
+    intersects &&
+    intersects.length &&
+    intersects[0].object.name !== "Plane"
+  ) {
     const intersectedNearest = intersects[0].object;
     if (intersectedNearest !== lastIntersected) {
       if (lastIntersected) {
@@ -104,21 +137,79 @@ function onMouseMove(event) {
     const intersects = raycaster.intersectObjects(intersectableObjects);
     handleHelperText(intersects);
     makeLighter(intersects);
+    if (intersects && intersects.length) {
+      if (isMouseDown) {
+        
+        if (intersects[0].object.name !== "Plane") {
+          const previousY = intersects[0].object.position.y;
+          // with plane intersection
+          // next to border
+          if (intersects[1]) {
+            const newPosition = intersects[1].point;
+            tempPoint.position.copy(newPosition);
+            // const newX = Math.floor(newPosition.x / 10) * 10 + (newPosition.x < 0 ? -5 : 5);
+            // intersects[0].object.position.x = newX;
+            // intersects[0].object.position.setX(newX);
+            if (
+              Math.abs(newPosition.x) <= 95 &&
+              Math.abs(newPosition.z) <= 95
+            ) {
+              const signDeltaX =
+                newPosition.x - intersects[0].object.position.x < 0 ? -1 : 1;
+              const signDeltaZ =
+                newPosition.z - intersects[0].object.position.z < 0 ? -1 : 1;
+              intersects[0].object.position.copy(newPosition);
+              // console.log(signDeltaX, "x");
+              // console.log(signDeltaZ, "z");
+              // intersects[0].object.position.z =
+              //   Math.floor(newPosition.z / 10) * 10 + signDeltaZ * 5;
+              // intersects[0].object.position.x =
+              //   Math.floor(newPosition.x / 10) * 10 + signDeltaX * 5;
+          }
+
+          }
+          intersects[0].object.position.setY(previousY);
+        }
+      } else {
+        if (intersects[0].object.name !== "Plane") {
+          plane.position.copy(intersects[0].object.position);
+          
+
+          // plane.lookAt(50, 0, 0);
+        }
+      }
+    }
+
+    // if (
+    //   isMouseDown &&
+    //   intersects &&
+    //   intersects.length &&
+    //   intersects[0].object.name !== "Plane"
+    // ) {
+    //   const intersected = intersects[0];
+    //   intersected.object.position.set(10 * mouse.x, 0, 0);
+    // }
   }
 }
 
 function onMouseDown(event) {
   if (initEvent(event)) {
+    isMouseDown = true;
     const intersects = raycaster.intersectObjects(intersectableObjects);
     if (intersects && intersects.length > 0) {
       if (intersects[0].object.name === "Plane") {
         addCube(intersects[0]);
       } else {
-        removeCube(intersects[0].object);
+        offset.copy(intersects[0].point);
+        offset.sub(plane.position);
+        // removeCube(intersects[0].object);
       }
     }
   }
 }
 
-document.addEventListener("mousemove", onMouseMove, false);
-document.addEventListener("click", onMouseDown, false);
+function onMouseUp(event) {
+  if (initEvent(event)) {
+    isMouseDown = false;
+  }
+}
