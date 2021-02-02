@@ -31,6 +31,9 @@ const planeIntersect = new Vector3();
 const shift = new Vector3();
 // < ------------------------------------>
 
+// remove
+let isShiftDown = false;
+
 function createRaycaster(cam, globalScene, intersectable = [], canvasElement) {
   camera = cam;
   raycaster = new Raycaster();
@@ -42,6 +45,7 @@ function createRaycaster(cam, globalScene, intersectable = [], canvasElement) {
   canvas.addEventListener("mousedown", onMouseDown, false);
   canvas.addEventListener("mousemove", onMouseMove, false);
   canvas.addEventListener("mouseup", onMouseUp, false);
+
   return { raycaster };
 }
 
@@ -114,13 +118,14 @@ const handleHelperText = (intersects) => {
 
   const intersectedObject = intersects[0].object;
 
-  if (intersectedObject.name === "Plane") {
-    setActionHelperText(`Add Cube ${lastAddedCubeNumber}`);
+
+  if (intersectedObject.name.startsWith("Cube") || dragObject) {
+    setActionHelperText(`Click and move ${intersectedObject.name}  to relocate it or remove it by click with pressed SHIFT key.`);
     return;
   }
 
-  if (intersectedObject.name.startsWith("Cube")) {
-    setActionHelperText(`Remove ${intersectedObject.name}`);
+  if (intersectedObject.name === "Plane") {
+    setActionHelperText(`Add Cube ${lastAddedCubeNumber}`);
     return;
   }
 };
@@ -150,10 +155,13 @@ function onMouseDown(event) {
       if (intersects[0].object.name === "Plane") {
         addCube(intersects[0]);
       } else {
-        helpPlane.setFromNormalAndCoplanarPoint(pNormal, intersects[0].point);
-        shift.subVectors(intersects[0].object.position, intersects[0].point);
-        dragObject = intersects[0].object;
-        // removeCube(intersects[0].object);
+        if (!isShiftDown) {
+          helpPlane.setFromNormalAndCoplanarPoint(pNormal, intersects[0].point);
+          shift.subVectors(intersects[0].object.position, intersects[0].point);
+          dragObject = intersects[0].object;
+        } else {
+          removeCube(intersects[0].object);
+        }
       }
     }
   }
@@ -165,3 +173,15 @@ function onMouseUp(event) {
     dragObject = null;
   }
 }
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Shift") {
+    isShiftDown = true;
+  }
+});
+
+document.addEventListener("keyup", function(event) {
+  if (event.key === "Shift") {
+    isShiftDown = false;
+  }
+});
