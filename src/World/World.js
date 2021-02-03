@@ -9,8 +9,6 @@ import { createRenderer } from "./systems/renderer.js";
 import { Resizer } from "./systems/Resizer.js";
 import { Loop } from "./systems/Loop.js";
 import { createRaycaster } from "./systems/Raycaster.js";
-import { createDragControls } from "./systems/DragControls.js";
-import { GridHelper } from "three";
 
 let camera;
 let renderer;
@@ -26,10 +24,10 @@ class World {
     loop = new Loop(camera, scene, renderer);
     container.append(renderer.domElement);
 
-    // const orbitControls = createOrbitControls(camera, renderer.domElement);
+    const orbitControls = createOrbitControls(camera, renderer.domElement);
     const { directionalLight, ambientLight } = createLights();
 
-    // loop.updatables.push(orbitControls);
+    loop.updatables.push(orbitControls);
 
     new Resizer(container, camera, renderer);
 
@@ -38,10 +36,9 @@ class World {
       camera,
       scene,
       [plane],
-      renderer.domElement
+      orbitControls
     );
     const { axesHelper } = createHelpers();
-    scene.add(new GridHelper(200, 20))
     // const dragControls = createDragControls(cubes, camera, renderer.domElement);
 
     scene.add(directionalLight, ambientLight);

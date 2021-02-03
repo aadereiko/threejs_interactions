@@ -14,7 +14,7 @@ let camera = null;
 let scene = null;
 let intersectableObjects = [];
 let lastAddedCubeNumber = 1;
-let canvas = null;
+let orbitControls = null;
 
 // raycasting for lightnening
 let lastIntersected;
@@ -34,17 +34,17 @@ const shift = new Vector3();
 // remove
 let isShiftDown = false;
 
-function createRaycaster(cam, globalScene, intersectable = [], canvasElement) {
+function createRaycaster(cam, globalScene, intersectable = [], orbControls) {
   camera = cam;
   raycaster = new Raycaster();
   mouse = new Vector2();
   scene = globalScene;
   intersectableObjects = intersectable;
-  canvas = canvasElement;
+  orbitControls = orbControls;
 
-  canvas.addEventListener("mousedown", onMouseDown, false);
-  canvas.addEventListener("mousemove", onMouseMove, false);
-  canvas.addEventListener("mouseup", onMouseUp, false);
+  document.addEventListener("pointerdown", onMouseDown, false);
+  document.addEventListener("pointermove", onMouseMove, false);
+  document.addEventListener("pointerup", onMouseUp, false);
 
   return { raycaster };
 }
@@ -120,7 +120,7 @@ const handleHelperText = (intersects) => {
 
 
   if (intersectedObject.name.startsWith("Cube") || dragObject) {
-    setActionHelperText(`Click and move ${intersectedObject.name}  to relocate it or remove it by click with pressed SHIFT key.`);
+    setActionHelperText(`Click and move ${intersectedObject.name} to relocate it or remove it by click with pressed SHIFT key.`);
     return;
   }
 
@@ -152,6 +152,10 @@ function onMouseDown(event) {
     isMouseDown = true;
     const intersects = raycaster.intersectObjects(intersectableObjects);
     if (intersects && intersects.length > 0) {
+      if (orbitControls) {
+        orbitControls.enabled = false;
+      }
+
       if (intersects[0].object.name === "Plane") {
         addCube(intersects[0]);
       } else {
@@ -171,6 +175,10 @@ function onMouseUp(event) {
   if (initEvent(event)) {
     isMouseDown = false;
     dragObject = null;
+
+    if (orbitControls) {
+      orbitControls.enabled = true;
+    }
   }
 }
 
