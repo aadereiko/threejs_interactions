@@ -112,7 +112,7 @@ const initEvent = (event) => {
 
 const handleHelperText = (intersects) => {
   if (!intersects.length) {
-    setActionHelperText("Click onto the plane to place a cube there");
+    setActionHelperText("Click and move to rotate");
     return;
   }
 
